@@ -38,7 +38,7 @@ class AudioTranscribeAndEmbedService:
                 error_message = f"Input file missing or empty: {str(video_path)}"
                 logger.error(f"{error_message}")
                 return {"status": "error", "error": error_message}
-            logger.info("checking for media typwe")  ##
+            logger.info("checking for media type")  ##
             media_type = await get_media_type(video_path)
             if media_type != "video":
                 error_message = f"Unsuitable file type [{media_type}]"
@@ -54,8 +54,8 @@ class AudioTranscribeAndEmbedService:
             return {"status": "success", "audio_path": audio_path}
 
         except Exception:
-            logger.info("An unexecpected error occured")
-            return {"status": "error", "error": "An Unexpected error occured"}
+            logger.info("An unexpected error occurred")
+            return {"status": "error", "error": "An Unexpected error occurred"}
 
     async def _get_transcription(self, audio_file_path: str) -> Dict[str, Any]:
         """

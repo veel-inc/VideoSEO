@@ -82,7 +82,7 @@ class PostgresDatabaseService:
         if top_k <= 0:
             raise ValueError("top_k must be positive")
 
-        logger.info(f"Searchig for top {top_k} similar segments")
+        logger.info(f"Searching for top {top_k} similar segments")
         results = await self.database_port.search_similar_vectors(
             query_embedding=query_embedding,
             top_k=top_k,

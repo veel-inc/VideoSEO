@@ -33,7 +33,7 @@ class VideoSegmentModel(BaseModel):
     )
     segment_end_time: float = Field(..., description="End time of each video segments")
     distance: float = Field(
-        ..., description="confindence score that calculates the distance to other query"
+        ..., description="confidence score that calculates the distance to other query"
     )
 
 

@@ -27,7 +27,7 @@ uv # For dependency management and virtual environments
 - Test-Driven Development(TDD)
 
 ## Quick Start
-### 1. Clone the Respository
+### 1. Clone the Repository
 ``` bash
 git clone git@github.com:veel-inc/VideoSEO.git
 cd VideoSEO

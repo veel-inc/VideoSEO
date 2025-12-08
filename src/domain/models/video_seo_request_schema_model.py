@@ -22,7 +22,7 @@ from pydantic import BaseModel, Field
 class VideoSEORequestSchemaModel(BaseModel):
     video_id: str = Field(..., description="Unique ID of the video")
     tenant_id: str = Field(..., description="Unique id of the org (tenant id)")
-    title: str = Field(..., description="Ttile of the video")
+    title: str = Field(..., description="Title of the video")
     bucket_name: str = Field(
         ..., description="s3 bucket name of the video where it is stored"
     )
