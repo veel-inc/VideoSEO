@@ -131,7 +131,7 @@ class AsyncOpenAIApiAdapter(AsyncOpenAIAPIPort, metaclass=SingletonABCMeta):
             embeddings = [item.embedding for item in response.data]
             return embeddings
         except Exception as e:
-            logger.error(f"Unexpected error occured during embedding: {e}")
+            logger.error(f"Unexpected error occurred during embedding: {e}")
             raise
 
     async def response(

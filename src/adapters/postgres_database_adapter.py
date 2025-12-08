@@ -532,7 +532,7 @@ class AsyncPostgresDatabaseAdapter(PostgresDatabasePort):
             logger.info(f"Successfully inserted data from {parquet_file_path}")
 
         except Exception as e:
-            logger.error(f"An unexpected error occured while inserting data {e}")
+            logger.error(f"An unexpected error occurred while inserting data {e}")
             raise
 
     async def _insert_video_segments(self, df: pd.DataFrame) -> None:
@@ -592,7 +592,7 @@ class AsyncPostgresDatabaseAdapter(PostgresDatabasePort):
             except:
                 pass
             logger.error(
-                f"An unexpected error occured during inserting video segments: {e}"
+                f"An unexpected error occurred during inserting video segments: {e}"
             )
             raise
         finally:
@@ -646,10 +646,10 @@ class AsyncPostgresDatabaseAdapter(PostgresDatabasePort):
             logger.info(f"Inserted parquet file {len(df)} into table videos")
         except Exception as e:
             try:
-                self.conn.roll()
+                self.conn.rollback()
             except:
                 pass
-            logger.error(f"An unexpected error occured during :{e}")
+            logger.error(f"An unexpected error occurred during :{e}")
             raise
         finally:
             await self.close()
@@ -716,7 +716,7 @@ class AsyncPostgresDatabaseAdapter(PostgresDatabasePort):
             raise
 
         except Exception as e:
-            logger.error(f"An unexpected error occured: {e}")
+            logger.error(f"An unexpected error occurred: {e}")
             raise
 
     async def implement_ivfflat_indexing(self):
@@ -743,7 +743,7 @@ class AsyncPostgresDatabaseAdapter(PostgresDatabasePort):
                 self.conn.rollback()
             except:
                 pass
-            logger.error(f"An unexpected error occured: {e}")
+            logger.error(f"An unexpected error occurred: {e}")
             raise
         finally:
             await self.close()

@@ -56,7 +56,7 @@ class PostgresDatabaseService:
             )
             logger.info("Successfully stored data from parquet file")
         except Exception as e:
-            logger.error(f"Unexpected error occured while storing parquet file: {e}")
+            logger.error(f"Unexpected error occurred while storing parquet file: {e}")
             raise
 
     async def search_video_segments(
@@ -97,6 +97,6 @@ class PostgresDatabaseService:
         return schema
 
     async def cleanup(self) -> None:
-        """Close databse connections and cleanup resources"""
+        """Close database connections and cleanup resources"""
         logger.info("Cleaning up service resources")
         await self.database_port.close()

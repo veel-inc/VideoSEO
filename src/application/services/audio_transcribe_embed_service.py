@@ -155,7 +155,7 @@ class AudioTranscribeAndEmbedService:
     ):
         result = await self._download_and_extract_audio(video_path=video_path)
         if result.get("status") != "success":
-            return {"status": "error", "error": "Error occured"}
+            return {"status": "error", "error": "Error occurred"}
         audio_path = result.get("audio_path", "")
 
         transcription = await self._get_transcription(audio_file_path=audio_path)
