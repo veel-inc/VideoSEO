@@ -1,5 +1,11 @@
 [project]
 name = "videoseo"
+authors = [
+   { name="Aayush Puri (aayush@veelapp.com)"},
+   { name="Swati Dutta (swati@veelapp.com)"},
+   { name="Yogesh Panta (yogesh.panta@veelapp.com)"},
+   { name="Yubraj Sigdel (yubraj@veelapp.com)"},
+]
 version = "0.1.0"
 description = "An innovative platform designed to revolutionize the way video content is optimized for search engines and user engagement."
 readme = "README.md"
