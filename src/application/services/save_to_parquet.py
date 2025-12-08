@@ -47,7 +47,7 @@ async def save_video_data(
     for idx, file_path in enumerate(list_dir):
         video_file = Path(f"{video_dir}/{file_path}")
 
-        print("len and path in list", len(list_dir), list_dir)
+        logger.debug("len and path in list", len(list_dir), list_dir)
         video_id = video_file.stem
         complete_res, segment_res = await obj.process_video(
             video_path=video_file,

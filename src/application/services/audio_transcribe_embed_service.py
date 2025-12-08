@@ -162,7 +162,7 @@ class AudioTranscribeAndEmbedService:
 
         full_text_embedding = await self._embed_full_text(transcription["full_text"])
         segment_embeddings = await self._embed_text_segments(transcription["segments"])
-        print("the length of segnment embedding are", len(segment_embeddings))
+        logger.info("The length of segment embedding are", len(segment_embeddings))
 
         logger.info(f"Completed transcription and embedding for video_id: {video_id}")
 

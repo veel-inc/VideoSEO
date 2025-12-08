@@ -44,6 +44,6 @@ class S3StoragePort(ABC):
             :param bucket_name: S3 bucket name where the file is to be uploaded
             :param s3_prefix: S3 prefix
         Returns:
-            Dict[str, float]: Dictionary of local file path and time taken to upload the file
+            Dict[str, float]: tuple containing the local file path and time taken to upload the file
         """
         pass

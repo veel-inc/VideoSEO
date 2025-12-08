@@ -553,7 +553,6 @@ class AsyncPostgresDatabaseAdapter(PostgresDatabasePort):
 
         try:
             logger.info("inserting into video segments table")
-            print("")
 
             sql = """
                     INSERT INTO video_segments(
@@ -563,8 +562,8 @@ class AsyncPostgresDatabaseAdapter(PostgresDatabasePort):
                 """
 
             for _, row in df.iterrows():
-                print(type(row["segment_embedding"]))
-                print(row["segment_embedding"])
+                logger.debug(type(row["segment_embedding"]))
+                logger.debug(row["segment_embedding"])
                 emb = row["segment_embedding"]
                 if isinstance(emb, np.ndarray):
                     if emb.dtype == object:
@@ -819,7 +818,7 @@ class AsyncPostgresDatabaseAdapter(PostgresDatabasePort):
             results = []
             for row in rows:
                 results.append(row[0])
-            print("the popular videos are:", results)
+            logger.info("the popular videos are:", results)
             return results
         except errors.UndefinedTable as e:
             logger.error(f"Table not found for searching: {e}")

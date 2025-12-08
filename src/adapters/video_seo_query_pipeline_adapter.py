@@ -137,7 +137,7 @@ class VideoSEOQueryAdapter(VideoSEOQueryPort):
                     }
                 ).model_dump()
             query_embedding = embeddings[0]
-            print("the type of query embeddding is", type(query_embedding))
+            logger.info("The type of query embeddding is", type(query_embedding))
 
             results = await self.database_port.search_similar_vectors(
                 query_embedding=query_embedding,
@@ -148,7 +148,7 @@ class VideoSEOQueryAdapter(VideoSEOQueryPort):
             grouped_results = group_segments_by_video_id(raw_segments=results)
             if grouped_results:
                 created_time = datetime.now(timezone.utc)
-                print("the current created utc time is", created_time)
+                logger.debug("The current created utc time is", created_time)
                 try:
                     await self.database_port.insert_into_session_table(
                         chat_id=str(chat_id),
