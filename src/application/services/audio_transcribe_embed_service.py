@@ -1,13 +1,26 @@
+# Copyright (C) 2025 Veel Inc.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+
 import logging
 from pathlib import Path
 from typing import Any, Dict, List
 
-# from src.core import setup_logging
 from src.domain.models import VideoDatabaseModel, VideoSegmentDatabaseModel
 from src.ports.output import AsyncOpenAIAPIPort
 from src.utils import extract_audio_from_video, file_exists_and_nonempty, get_media_type
 
-# setup_logging()
 logger = logging.getLogger(__name__)
 
 
