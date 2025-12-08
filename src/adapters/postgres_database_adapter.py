@@ -734,7 +734,7 @@ class AsyncPostgresDatabaseAdapter(PostgresDatabasePort):
                         USING ivfflat (segment_embedding vector_cosine_ops) 
                         WITH (lists = 100);
                     """
-            self.cursor.execute(query=create_index_query)
+            self.cursor.execute(create_index_query)
 
             self.conn.commit()
             logger.info("Indexing created and trained successfully")
@@ -813,7 +813,7 @@ class AsyncPostgresDatabaseAdapter(PostgresDatabasePort):
             """
             logger.info("Searching popular videos")
 
-            self.cursor.execute(query=popular_videos_search_query)
+            self.cursor.execute(popular_videos_search_query)
             rows = self.cursor.fetchall()
 
             results = []

@@ -63,14 +63,14 @@ class PostgresDatabaseService:
         self,
         query_embedding: List[float],
         top_k: int = 10,
-        similarity_alogrithm: str = "cosine",
+        similarity_algorithm: str = "cosine",
     ) -> List[Dict[str, Any]]:
         """
         Search for similar video segments using a query embedding.
         Args:
             query_embedding (List[float]): Embedding vector representing the query; must be non-empty.
             top_k (int): Maximum number of similar segments to return (must be positive). Defaults to 10.
-            similarity_alogrithm (str): Similarity algorithm to use (e.g., "cosine"). Defaults to "cosine".
+            similarity_algorithm (str): Similarity algorithm to use (e.g., "cosine"). Defaults to "cosine".
         Returns:
             List[Dict[str, Any]]: A list of serialized dictionaries representing matching video segments,
             validated and cleaned (None values excluded).
@@ -86,7 +86,7 @@ class PostgresDatabaseService:
         results = await self.database_port.search_similar_vectors(
             query_embedding=query_embedding,
             top_k=top_k,
-            similarity_algorithm=similarity_alogrithm,
+            similarity_algorithm=similarity_algorithm,
         )
 
         logger.info(f"Found {len(results)} matching segments")

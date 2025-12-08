@@ -132,4 +132,4 @@ async def main():
         try:
             await db.close()
         except Exception:
-            pass
+            logger.error("Error occurred while closing the database connection", exc_info=True)
