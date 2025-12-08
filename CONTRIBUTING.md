@@ -57,6 +57,11 @@ git push origin feature/your-feature-name
 - Go to your fork on GitHub and open a Pull Request (PR) to the `main` branch of this repository.
 - Provide a clear description of your changes and reference the related issue number.
 
+---
+
+## Join Our Community
+Join our community on Discord to connect with other users and contributors! You can find the demo and discussions in the `#video-seo-discussions` channel. [Click here to join our Discord](https://discord.gg/6ccCcc6K).
+
 ## Code of Conduct
 Please be respectful and considerate in all interactions. See [Contributor Covenant](https://www.contributor-covenant.org/) for guidelines.
 
