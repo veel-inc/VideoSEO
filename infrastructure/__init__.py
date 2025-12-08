@@ -13,6 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-from src.application.prompts.sanitized_query_prompt import SanitizedQueryPrompt
+from infrastructure.scheduler import TrendingSearchScheduler
+from infrastructure.materialized_view_refresh_scheduler import MaterializedViewRefreshScheduler
 
-__all__ = ["SanitizedQueryPrompt"]
+__all__ = [
+    "TrendingSearchScheduler",
+    "MaterializedViewRefreshScheduler"
+]

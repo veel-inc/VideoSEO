@@ -15,5 +15,6 @@
 
 from src.ports.input.video_seo_query_port import VideoSEOQueryPort
 from src.ports.input.health_service_port import HealthServicePort
+from src.ports.input.trending_search_port import TrendingSearchPort
 
-__all__ = ["VideoSEOQueryPort", "HealthServicePort"]
+__all__ = ["VideoSEOQueryPort", "HealthServicePort", "TrendingSearchPort"]

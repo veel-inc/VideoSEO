@@ -40,7 +40,7 @@ async def save_video_data(
     title: str | None = None,
     metadata: dict | None = None,
 ):
-    video_dir = "/home/yogesh/Desktop/ugc_videos"
+    video_dir = "your-video-directory-path"
     list_dir = os.listdir(video_dir)
 
     for idx, file_path in enumerate(list_dir):

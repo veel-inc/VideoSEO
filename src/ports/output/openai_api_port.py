@@ -14,9 +14,10 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List, Literal, Optional, Union, Type
+from openai.types.responses import Response
 from openai.types.audio import TranscriptionVerbose
-
+from pydantic import BaseModel
 
 class AsyncOpenAIAPIPort(ABC):
     """Abstract base class for asynchronous OpenAI API ports"""
@@ -34,4 +35,28 @@ class AsyncOpenAIAPIPort(ABC):
     async def text_embedding(
         self, text: str | List[Dict[str, Any]], model: str
     ) -> List[str]:
+        pass
+
+    @abstractmethod
+    async def response(
+        self,
+        user_input: Union[str, List[Dict[str, str]]],
+        instructions: str,
+        model: str,
+        temperature: float,
+        tools: Optional[List[Dict[str, Any]]],
+        tool_choice: str,
+    ) -> Response:
+        pass
+    
+    @abstractmethod
+    async def structured_response(
+        self,
+        user_input: Union[str, List[Dict[str, str]]],
+        instructions: str,
+        schema_model: Type[BaseModel],
+        model: str,
+        temperature: float,
+        tools: Optional[List[Dict[str, Any]]],
+    ) -> Response:
         pass

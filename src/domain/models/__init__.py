@@ -30,6 +30,16 @@ from src.domain.models.video_seo_request_schema_model import (
     VideoSEORequestSchemaModel,
 )
 
+from src.domain.models.trending_search_models import (
+    TrendingSearchModel,
+    TrendingSearchRequestModel,
+    ExtendedTrendingSearchResponseModel,
+    TrendingSearchResponseModel,
+    RepresentativeQueryModel,
+)
+
+from src.domain.models.search_popular_videos_model import PopularVideosRequestModel, PopularVideosResponseModel
+
 __all__ = [
     "VideoDatabaseModel",
     "VideoSegmentDatabaseModel",
@@ -42,4 +52,11 @@ __all__ = [
     "SegmentWithVideoIDModel",
     "ExceptionLogData",
     "LogRecord",
+    "TrendingSearchModel",
+    "TrendingSearchRequestModel",
+    "ExtendedTrendingSearchResponseModel",
+    "TrendingSearchResponseModel",
+    "RepresentativeQueryModel",
+    "PopularVideosRequestModel",
+    "PopularVideosResponseModel",
 ]

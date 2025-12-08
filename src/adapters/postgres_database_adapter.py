@@ -16,10 +16,10 @@
 import json
 import logging
 import os
-from uuid import UUID
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Union, Optional
-from datetime import datetime
+from typing import Any, Dict, List, Optional, Union
+from uuid import UUID
 
 import numpy as np
 import pandas as pd
@@ -107,6 +107,235 @@ class AsyncPostgresDatabaseAdapter(PostgresDatabasePort):
                 pass
             logger.error(f"Failed to setup extensions: {e}")
             raise
+
+    async def create_trends_table(self) -> None:
+        """Create trending_searches table if it doesn't exist with all required columns."""
+        try:
+            sql = """
+                CREATE TABLE IF NOT EXISTS trending_searches (
+                    id UUID DEFAULT gen_random_uuid(),
+                    representative_query TEXT NOT NULL,
+                    representative_query_generated TEXT,
+                    trend_score FLOAT NOT NULL,
+                    query_count INTEGER NOT NULL,
+                    unique_query_count INTEGER NOT NULL,
+                    top_queries TEXT,
+                    created_at TIMESTAMPTZ NOT NULL,
+                    batch_timestamp TIMESTAMPTZ NOT NULL,
+                    CONSTRAINT trending_searches_pkey PRIMARY KEY (id)
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_trending_batch_timestamp 
+                ON trending_searches(batch_timestamp DESC);
+
+                CREATE INDEX IF NOT EXISTS idx_trending_score 
+                ON trending_searches(trend_score DESC);
+
+                CREATE INDEX IF NOT EXISTS idx_trending_query
+                ON trending_searches(LOWER(representative_query));
+            """
+
+            self.cursor.execute(sql)
+            self.conn.commit()
+            logger.info("Trending searches table ensured with all columns")
+
+        except Exception as e:
+            try:
+                self.conn.rollback()
+            except:
+                pass
+            logger.error(f"Error creating trends table: {e}")
+            raise
+
+    async def ingest_queries(
+        self, batch_interval_minutes: Optional[int], max_rows: Optional[int] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Ingest queries from the video_seo_response_history table.
+
+        Args:
+            batch_interval_minutes (Optional[int]):
+                If None, ingest all non-empty historical queries. If an integer, only ingest
+                queries created within the last `batch_interval_minutes` minutes (calculated
+                using timezone-aware UTC now).
+            max_rows (Optional[int]):
+                Optional maximum number of rows to return. When provided, a SQL LIMIT is applied
+                to constrain the number of returned records.
+
+        Returns:
+            List[Dict[str, Any]]:
+                A list of dictionaries (ordered by created_at descending) where each dictionary
+                contains:
+                    - "original_query" (str): the non-empty query text.
+                    - "chat_id" (Any): the associated chat identifier.
+                    - "created_at" (datetime): the row creation timestamp (timezone-aware UTC).
+
+        Raises:
+            Exception:
+                Propagates any exception encountered while executing the database query or
+                fetching results. The method also logs informational messages on success and
+                error details on failure.
+
+        Notes:
+            - Rows with NULL or blank (after TRIM) query values are excluded.
+            - When batch_interval_minutes is provided, the cutoff is computed as now (UTC)
+              minus the given minutes and used as a parameterized query filter.
+        """
+        try:
+            if batch_interval_minutes is None:
+                sql = """
+                    SELECT 
+                        query,
+                        chat_id,
+                        created_at
+                    FROM video_seo_response_history
+                    WHERE query IS NOT NULL
+                      AND TRIM(query) != ''
+                    ORDER BY created_at DESC
+                """
+                if max_rows is not None:
+                    sql = sql.rstrip() + f"\nLIMIT {int(max_rows)}"
+                params = ()
+            else:
+                cutoff_time = datetime.now(timezone.utc) - timedelta(
+                    minutes=batch_interval_minutes
+                )
+                sql = """
+                    SELECT 
+                        query,
+                        chat_id,
+                        created_at
+                    FROM video_seo_response_history
+                    WHERE created_at >= %s
+                        AND query IS NOT NULL
+                        AND TRIM(query) != ''
+                    ORDER BY created_at DESC
+                """
+                if max_rows is not None:
+                    sql = sql.rstrip() + f"\nLIMIT {int(max_rows)}"
+                params = (cutoff_time,)
+
+            self.cursor.execute(sql, params)
+            rows = self.cursor.fetchall()
+
+            queries = []
+            for row in rows:
+                queries.append(
+                    {"original_query": row[0], "chat_id": row[1], "created_at": row[2]}
+                )
+
+            if batch_interval_minutes is None:
+                if max_rows is None:
+                    logger.info(f"Ingested {len(queries)} total queries from history")
+                else:
+                    logger.info(
+                        f"Ingested {len(queries)} historical queries (limit {max_rows})"
+                    )
+            else:
+                logger.info(
+                    f"Ingested {len(queries)} queries from last {batch_interval_minutes} minutes"
+                )
+
+            return queries
+
+        except Exception as e:
+            logger.error(f"Error ingesting queries: {e}")
+            raise
+
+    async def persist_trends(
+        self, ranked_trends: List[Dict[str, Any]], batch_timestamp: datetime
+    ) -> None:
+        """Persist trending search records into `trending_searches`."""
+        try:
+            await self.create_trends_table()
+
+            sql = """
+                INSERT INTO trending_searches (
+                    representative_query,
+                    representative_query_generated,
+                    trend_score,
+                    query_count,
+                    unique_query_count,
+                    top_queries,
+                    created_at,
+                    batch_timestamp
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """
+
+            for trend in ranked_trends:
+                self.cursor.execute(
+                    sql,
+                    (
+                        trend.get("representative_query"),
+                        trend.get("representative_query_generated"),
+                        float(trend.get("trend_score", 0)),
+                        int(trend.get("query_count", 0)),
+                        int(trend.get("unique_query_count", 0)),
+                        json.dumps(trend.get("top_queries")),
+                        trend.get("created_at"),
+                        batch_timestamp,
+                    ),
+                )
+
+            self.conn.commit()
+            logger.info(f"Successfully persisted {len(ranked_trends)} trends")
+
+        except Exception as e:
+            try:
+                self.conn.rollback()
+            except:
+                pass
+            logger.error(f"Error persisting trends: {e}")
+            raise
+
+    async def get_current_trends(
+        self, limit: int = 20, min_score: float = 0.0
+    ) -> Dict[str, Any]:
+        """Retrieve current trends for the most recent batch_timestamp and format results."""
+        try:
+            sql = """
+                SELECT 
+                    representative_query,
+                    representative_query_generated,
+                    trend_score,
+                    query_count,
+                    unique_query_count,
+                    top_queries,
+                    created_at,
+                    batch_timestamp
+                FROM trending_searches
+                WHERE batch_timestamp = (
+                    SELECT MAX(batch_timestamp) FROM trending_searches
+                )
+                AND trend_score >= %s
+                ORDER BY trend_score DESC
+                LIMIT %s
+            """
+
+            self.cursor.execute(sql, (min_score, limit))
+            rows = self.cursor.fetchall()
+
+            trends = []
+            for row in rows:
+                trends.append(
+                    {
+                        "query": row[0],
+                        "representative_query_generated": row[1],
+                        "trend_score": round(float(row[2]), 4),
+                        "query_count": row[3],
+                        "unique_query_count": row[4],
+                        "top_queries": row[5],
+                        "created_at": row[6],
+                        "batch_timestamp": row[7],
+                    }
+                )
+
+            return {"status": "success", "trends": trends, "count": len(trends)}
+
+        except Exception as e:
+            logger.error(f"Error retrieving current trends: {e}")
+            return {"status": "error", "trends": [], "count": 0, "error": str(e)}
 
     async def create_table(self, table_name: str) -> None:
         """Create the specified database table if it does not already exist.
@@ -224,7 +453,14 @@ class AsyncPostgresDatabaseAdapter(PostgresDatabasePort):
             logger.error(f"Failed to create table : {e}")
             raise
 
-    async def insert_into_session_table(self,chat_id:UUID, response: List[Dict[str, Any]],query:str, created_at:datetime, temporary_id:Optional[str]=None) -> None:
+    async def insert_into_session_table(
+        self,
+        chat_id: UUID,
+        response: List[Dict[str, Any]],
+        query: str,
+        created_at: datetime,
+        temporary_id: Optional[str] = None,
+    ) -> None:
         """Insert a list of response objects into the video_seo_response_history database table.
         Args:
             chat_id (UUID): unique user id
@@ -438,7 +674,11 @@ class AsyncPostgresDatabaseAdapter(PostgresDatabasePort):
         try:
             if isinstance(query_embedding, np.ndarray):
                 if query_embedding.dtype == object:
-                    query_embedding = query_embedding[0].tolist() if len(query_embedding) > 0 else query_embedding.tolist()
+                    query_embedding = (
+                        query_embedding[0].tolist()
+                        if len(query_embedding) > 0
+                        else query_embedding.tolist()
+                    )
                 else:
                     query_embedding = query_embedding.tolist()
 
@@ -496,11 +736,6 @@ class AsyncPostgresDatabaseAdapter(PostgresDatabasePort):
                     """
             self.cursor.execute(query=create_index_query)
 
-            # train_index_query = """
-            #                 SELECT ivfflat_train('idx_video_segments');
-            #             """
-            # self.cursor.execute(query=train_index_query)
-
             self.conn.commit()
             logger.info("Indexing created and trained successfully")
         except Exception as e:
@@ -512,6 +747,107 @@ class AsyncPostgresDatabaseAdapter(PostgresDatabasePort):
             raise
         finally:
             await self.close()
+
+    async def create_materialized_video_stat_table(self) -> None:
+        """Create a materialized view 'video_stats_view' that aggregates like, view, share, and post counts per video and commits it to the PostgreSQL database.
+        Args:
+            self: Instance of the adapter providing an active DB connection and cursor.
+        Returns:
+            None
+        """
+
+        try:
+            video_stat_query = """
+                            create materialized view if not exists video_stats_view
+                            as
+                            select v.id as video_id, count(vl."Id") as like_count, count(vv."Id") as view_count,
+                            count(vs."Id") as share_count, count(vp."Id") as post_count
+                            -- select *
+                            from videos v
+                            left join "VideoLikes" vl on v.id = vl."VideoId" 
+                            left join "VideoViews" vv on v.id = vv."VideoId"
+                            left join "VideoShares" vs on v.id = vs."VideoId"
+                            left join "VideoPosts" vp on vp."VideoShareId" = vs."Id"
+                            where v.id not in (
+                                select vr."VideoId"
+                                from "Reports" vr
+                                where vr."IsResolved" is false
+                            )
+                            group by v.id;
+                        """
+
+            logger.info(f"creating table video_seo_response_history ")
+            self.cursor.execute(video_stat_query)
+            self.conn.commit()
+        except Exception as e:
+            try:
+                self.conn.rollback()
+            except:
+                pass
+            logger.error(f"Failed to create table : {e}")
+            raise
+
+    async def search_popular_videos(self, limit: Optional[int] = 15) -> List:
+        """
+        Return a list of popular video IDs ordered by a computed popularity score.
+        Args:
+            limit (Optional[int]): Maximum number of popular videos to return. If a negative value is provided, the default of 15 is used.
+        Returns:
+            List: A list of video_id values ordered by descending popularity score (computed as view_count * 1 + like_count * 10 + share_count * 20).
+        """
+
+        try:
+            if limit < 0:
+                limit = 15
+
+            popular_videos_search_query = f"""
+            SELECT 
+            video_id, 
+            view_count, 
+            like_count, 
+            share_count, 
+            (view_count * 1 + like_count * 10 + share_count * 20) AS popularity_score
+            FROM video_stats_view
+            ORDER BY popularity_score DESC
+            LIMIT {limit};
+            """
+            logger.info("Searching popular videos")
+
+            self.cursor.execute(query=popular_videos_search_query)
+            rows = self.cursor.fetchall()
+
+            results = []
+            for row in rows:
+                results.append(row[0])
+            print("the popular videos are:", results)
+            return results
+        except errors.UndefinedTable as e:
+            logger.error(f"Table not found for searching: {e}")
+            raise
+
+        except Exception as e:
+            logger.error(f"An unexpected error occurred: {e}")
+            raise
+
+    async def refresh_materialized_view_tables(self):
+        """Refresh the 'video_stats_view' materialized view in the connected PostgreSQL database.
+        Args:
+            self: The adapter instance containing an active DB connection and cursor used to execute the refresh.
+        Returns:
+            None
+        """
+
+        try:
+            refresh_query = """ REFRESH MATERIALIZED VIEW video_stats_view;"""
+            self.cursor.execute(refresh_query)
+            self.conn.commit()
+        except:
+            try:
+                self.conn.rollback()
+            except:
+                pass
+            logger.error(f"Failed to refresh materialized view")
+            raise
 
     async def close(self) -> None:
         """Close the database connection and associated cursor, releasing resources.

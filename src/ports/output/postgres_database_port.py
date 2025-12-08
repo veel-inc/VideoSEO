@@ -60,3 +60,54 @@ class PostgresDatabasePort(ABC):
         temporary_id: Optional[str] = None,
     ) -> None:
         pass
+
+    @abstractmethod
+    async def create_trends_table(self) -> None:
+        """Ensure the `trending_searches` table exists."""
+        pass
+
+    @abstractmethod
+    async def ingest_queries(
+        self, batch_interval_minutes: Optional[int], max_rows: Optional[int] = None
+    ) -> List[Dict[str, Any]]:
+        """Return queries to analyze for trending.
+
+        Args:
+            batch_interval_minutes: If an int is provided, return rows within the
+                last `batch_interval_minutes`. If None, return historical rows
+                (see `max_rows`).
+            max_rows: When `batch_interval_minutes` is None, optionally limit the
+                number of rows returned to this many most-recent rows.
+        """
+        pass
+
+    @abstractmethod
+    async def persist_trends(
+        self, trends: List[Dict[str, Any]], batch_timestamp: datetime
+    ) -> None:
+        """Persist computed trend records to the database."""
+        pass
+
+    @abstractmethod
+    async def get_current_trends(
+        self, limit: int = 20, min_score: float = 0.0
+    ) -> Dict[str, Any]:
+        """Retrieve current top trends (formatted) from DB."""
+        pass
+
+    @abstractmethod
+    async def create_materialized_video_stat_table(self) -> None:
+        """Ensure the `materialized_video_stat` table exists."""
+        pass
+
+    @abstractmethod
+    async def search_popular_videos(self, limit: Optional[int] = 15) -> List:
+        """Search for popular videos."""
+        pass
+
+    # @abstractmethod
+    # async def create_index_for_popular_videos(self):
+    #     pass
+    @abstractmethod
+    async def refresh_materialized_view_tables(self):
+        pass

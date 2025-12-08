@@ -15,5 +15,18 @@
 
 from src.application.services.audio_transcribe_embed_service import AudioTranscribeAndEmbedService
 from src.application.services.postgres_database_service import PostgresDatabaseService
+from src.application.services.trending_search_service import (
+    QueryNormalizationService,
+    SemanticClusteringService,
+    TrendScoringService,
+    TrendingSearchConfig,
+)
 
-__all__ = ["AudioTranscribeAndEmbedService", "PostgresDatabaseService"]
+__all__ = [
+    "AudioTranscribeAndEmbedService", 
+    "PostgresDatabaseService",
+    "QueryNormalizationService",
+    "SemanticClusteringService",
+    "TrendScoringService",
+    "TrendingSearchConfig"
+]

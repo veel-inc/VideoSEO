@@ -13,6 +13,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-from src.application.prompts.sanitized_query_prompt import SanitizedQueryPrompt
+class SanitizedQueryPrompt:
+    SANITIZED_QUERY_PROMPT_TEMPLATE = """
+You are given a list of short user search queries that are variations on a theme. 
+Produce a single, concise representative search phrase of no more than {max_words} words
+that captures the intent of the examples. Return only the phrase (no explanation).
 
-__all__ = ["SanitizedQueryPrompt"]
+Your response must be in strict JSON format.
+"""

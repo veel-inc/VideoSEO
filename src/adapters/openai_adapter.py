@@ -16,11 +16,13 @@
 import logging
 import os
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Dict, Any, Union, Type
+from pydantic import BaseModel
 
 from dotenv import load_dotenv
 from openai import AsyncClient
 from openai.types.audio import TranscriptionVerbose
+from openai.types.responses import Response
 
 from src.ports.output import AsyncOpenAIAPIPort
 from src.utils import SingletonABCMeta
@@ -131,3 +133,109 @@ class AsyncOpenAIApiAdapter(AsyncOpenAIAPIPort, metaclass=SingletonABCMeta):
         except Exception as e:
             logger.error(f"Unexpected error occured during embedding: {e}")
             raise
+
+    async def response(
+        self,
+        user_input: Union[str, List[Dict[str, str]]],
+        instructions: str,
+        model: str = ResponseConfig.DEFAULT_MODEL,
+        temperature: float = ResponseConfig.DEFAULT_TEMPERATURE,
+        tools: Optional[List[Dict[str, Any]]] = None,
+        tool_choice: str = ResponseConfig.TOOL_CHOICE_AUTO,
+    ) -> Response:
+        """
+        Generate a response from the AI model.
+
+        Args:
+            user_input: The user input as a string or list of message dictionaries
+            instructions: System instructions for the model
+            model: Model identifier to use
+            temperature: Sampling temperature (0.0 to 1.0)
+            tools: Optional list of tool definitions
+            tool_choice: Tool selection strategy ('auto', 'required', or 'none')
+
+        Returns:
+            Response dictionary from the API
+
+        Raises:
+            ValueError: If parameters are invalid
+        """
+        if not 0.0 <= temperature <= 1.0:
+            raise ValueError(
+                f"Temperature must be between 0.0 and 1.0, got {temperature}"
+            )
+
+        params: Dict[str, Any] = {
+            "model": model,
+            "input": user_input,
+            "instructions": instructions,
+        }
+
+        if model not in ResponseConfig.MODELS_WITHOUT_TEMPERATURE:
+            params["temperature"] = temperature
+
+        if tools:
+            params["tools"] = tools
+            params["tool_choice"] = tool_choice
+
+        logger.info(f"Making API call with model: {model}")
+
+        try:
+            response = await self.client.responses.create(**params)
+            logger.debug(f"API call successful for model: {model}")
+            return response
+        except Exception as e:
+            logger.error(f"API call failed for model {model}: {str(e)}")
+            raise
+
+    async def structured_response(
+        self,
+        user_input: Union[str, List[Dict[str, str]]],
+        instructions: str,
+        schema_model: Type[BaseModel],
+        model: str = ResponseConfig.DEFAULT_MODEL,
+        temperature: float = ResponseConfig.DEFAULT_TEMPERATURE,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Response:
+        """
+        Generate a structured response conforming to a Pydantic schema.
+
+        Args:
+            user_input: The user input as a string or list of message dictionaries
+            instructions: System instructions for the model
+            schema_model: Pydantic model class defining the expected structure
+            model: Model identifier to use
+            temperature: Sampling temperature (0.0 to 1.0)
+            tools: Optional list of tool definitions (auto-generated if not provided)
+
+        Returns:
+            Structured response matching the schema_model
+
+        Raises:
+            ValueError: If schema_model is not a Pydantic BaseModel
+        """
+        if not issubclass(schema_model, BaseModel):
+            raise ValueError(
+                f"schema_model must be a Pydantic BaseModel, got {type(schema_model)}"
+            )
+
+        if tools is None:
+            schema_name = schema_model.__name__
+            tools = [
+                {
+                    "type": "function",
+                    "name": f"get_{schema_name.lower()}_data",
+                    "description": f"Generate structured data conforming to {schema_name} schema",
+                    "parameters": schema_model.model_json_schema(),
+                },
+            ]
+            logger.debug(f"Auto-generated tool definition for {schema_name}")
+
+        return await self.response(
+            user_input=user_input,
+            instructions=instructions,
+            model=model,
+            temperature=temperature,
+            tools=tools,
+            tool_choice=ResponseConfig.TOOL_CHOICE_REQUIRED,
+        )
