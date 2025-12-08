@@ -2,6 +2,7 @@
 name = "videoseo"
 authors = [
    { name="Aayush Puri (aayush@veelapp.com)"},
+   { name="Bishwo Adhikari (bishwo.adhikari@veelapp.com)"},
    { name="Swati Dutta (swati@veelapp.com)"},
    { name="Yogesh Panta (yogesh.panta@veelapp.com)"},
    { name="Yubraj Sigdel (yubraj@veelapp.com)"},
