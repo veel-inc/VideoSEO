@@ -14,10 +14,9 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
+import logging
 from pathlib import Path
 from typing import Any
-import logging
-
 
 logger = logging.getLogger(__name__)
 

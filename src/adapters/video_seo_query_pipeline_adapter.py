@@ -15,9 +15,9 @@
 
 import logging
 from collections import defaultdict
+from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
-from datetime import datetime, timezone
 
 from src.domain.models import (
     SegmentWithVideoIDModel,
@@ -154,11 +154,13 @@ class VideoSEOQueryAdapter(VideoSEOQueryPort):
                         chat_id=str(chat_id),
                         temporary_id=temporary_id,
                         response=grouped_results,
-                        query= query,
-                        created_at= created_time
+                        query=query,
+                        created_at=created_time,
                     )
                 except Exception as e:
-                    logger.error(f"Error occurred while inserting response into seo_response_history_table: {e}")
+                    logger.error(
+                        f"Error occurred while inserting response into seo_response_history_table: {e}"
+                    )
 
             schema = VideoSEOResponseModel.model_validate({"results": grouped_results})
             return schema.model_dump(exclude_none=True)

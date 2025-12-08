@@ -67,15 +67,17 @@ async def lifespan(app: FastAPI):
             _mv_scheduler.stop()
         logger.info("Materialized view scheduler stopped")
 
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title="Video SEO API",
         description="API for video search and trending analysis",
         version="1.0.0",
-        lifespan=lifespan 
+        lifespan=lifespan,
     )
     setup_opentelemetry_and_logger(app, service_name="nuvia")
     return app
+
 
 schema = strawberry.Schema(query=Query)
 graphql_app = GraphQLRouter(schema=schema)

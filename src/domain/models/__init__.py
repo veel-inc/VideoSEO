@@ -15,6 +15,17 @@
 
 from src.domain.models.health_response_model import HealthResponseModel
 from src.domain.models.otel_models import ExceptionLogData, LogRecord
+from src.domain.models.search_popular_videos_model import (
+    PopularVideosRequestModel,
+    PopularVideosResponseModel,
+)
+from src.domain.models.trending_search_models import (
+    ExtendedTrendingSearchResponseModel,
+    RepresentativeQueryModel,
+    TrendingSearchModel,
+    TrendingSearchRequestModel,
+    TrendingSearchResponseModel,
+)
 from src.domain.models.video_database_model import (
     VideoDatabaseModel,
     VideoSegmentDatabaseModel,
@@ -29,16 +40,6 @@ from src.domain.models.video_seo_request_schema_model import (
     VideoSEOQueryRequestModel,
     VideoSEORequestSchemaModel,
 )
-
-from src.domain.models.trending_search_models import (
-    TrendingSearchModel,
-    TrendingSearchRequestModel,
-    ExtendedTrendingSearchResponseModel,
-    TrendingSearchResponseModel,
-    RepresentativeQueryModel,
-)
-
-from src.domain.models.search_popular_videos_model import PopularVideosRequestModel, PopularVideosResponseModel
 
 __all__ = [
     "VideoDatabaseModel",

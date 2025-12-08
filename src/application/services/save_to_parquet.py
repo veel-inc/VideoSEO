@@ -13,15 +13,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import pandas as pd
 import logging
-from pathlib import Path
 import os
+from pathlib import Path
 
+import pandas as pd
+
+from src.adapters import AsyncOpenAIApiAdapter
 from src.application.services.audio_transcribe_embed_service import (
     AudioTranscribeAndEmbedService,
 )
-from src.adapters import AsyncOpenAIApiAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,7 @@ obj = AudioTranscribeAndEmbedService(openai_api_port=AsyncOpenAIApiAdapter())
 
 async def save_video_data(
     tenant_id: str,
-    video_url:str |None=None,
+    video_url: str | None = None,
     title: str | None = None,
     metadata: dict | None = None,
 ):
@@ -52,7 +53,7 @@ async def save_video_data(
             video_path=video_file,
             video_id=video_id,
             tenant_id=tenant_id,
-            title= f"video_{idx+1}_test_nuvia",
+            title=f"video_{idx+1}_test_nuvia",
             video_url=video_url,
             metadata=metadata,
         )
@@ -68,4 +69,3 @@ async def save_video_data(
         segment_data.to_parquet(segment_file_path)
         logger.info("segments saved as parquet")
     return "File saved"
-

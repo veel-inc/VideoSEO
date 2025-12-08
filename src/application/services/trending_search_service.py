@@ -13,27 +13,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+import json
 import logging
-import numpy as np
+from collections import Counter
 from datetime import datetime, timedelta, timezone
-from typing import List, Dict, Any
-from typing import Optional
-from src.ports.output.openai_api_port import AsyncOpenAIAPIPort
+from typing import Any, Dict, List, Optional
+
+import numpy as np
 from sklearn.cluster import DBSCAN
 from sklearn.metrics.pairwise import cosine_distances
-from collections import Counter
-import json
 
 from src.application.prompts import SanitizedQueryPrompt
-
 from src.domain.models.trending_search_models import RepresentativeQueryModel
+from src.ports.output.openai_api_port import AsyncOpenAIAPIPort
 
 logger = logging.getLogger(__name__)
 
 
 class TrendingSearchConfig:
     """Configuration for trending search processing."""
-    
+
     BATCH_INTERVAL_MINUTES = None
     MIN_CLUSTER_SIZE = 3
     DBSCAN_EPS = 0.418182
@@ -44,65 +43,66 @@ class TrendingSearchConfig:
     RECENCY_WEIGHT = 0.4
     RECENCY_DECAY_MINUTES = 5
 
+
 class QueryNormalizationService:
     """Service for normalizing and cleaning query text."""
-    
+
     @staticmethod
     async def normalize(query: str) -> str:
         """
         Normalize query text for better clustering.
-        
+
         Args:
             query: Raw query string
-            
+
         Returns:
             Normalized query string
         """
         # Convert to lowercase and strip whitespace
         query = query.lower().strip()
-        
+
         # Remove extra whitespace
-        query = ' '.join(query.split())
-        
+        query = " ".join(query.split())
+
         # Remove trailing punctuation
-        query = query.rstrip('?!.,')
-        
+        query = query.rstrip("?!.,")
+
         return query
-    
+
+
 class SemanticClusteringService:
     """
     Service for clustering queries based on semantic similarity.
     Uses DBSCAN algorithm with cosine distance.
     """
-    
+
     def __init__(self, config: TrendingSearchConfig = None):
         """
         Initialize clustering service.
-        
+
         Args:
             config: Optional configuration override
         """
         self.config = config or TrendingSearchConfig()
 
     async def cluster_queries(
-        self, 
-        queries_with_embeddings: List[Dict[str, Any]]
+        self, queries_with_embeddings: List[Dict[str, Any]]
     ) -> Dict[int, List[int]]:
         """
         Apply DBSCAN clustering to group semantically similar queries.
-        
+
         Args:
             queries_with_embeddings: List of query dicts with embeddings
-            
+
         Returns:
             Dictionary mapping cluster_id to list of query indices
         """
         try:
             # Extract embeddings matrix
-            embeddings_matrix = np.array([
-                q["embedding"] for q in queries_with_embeddings
-            ])
-            
+            embeddings_matrix = np.array(
+                [q["embedding"] for q in queries_with_embeddings]
+            )
+
             logger.info(f"Clustering {len(embeddings_matrix)} query vectors")
             logger.info(
                 f"DBSCAN params: eps={self.config.DBSCAN_EPS}, "
@@ -115,14 +115,14 @@ class SemanticClusteringService:
             dbscan = DBSCAN(
                 eps=self.config.DBSCAN_EPS,
                 min_samples=self.config.DBSCAN_MIN_SAMPLES,
-                metric='precomputed'
+                metric="precomputed",
             )
 
             cluster_labels = dbscan.fit_predict(distance_matrix)
 
             clusters = {}
             noise_count = 0
-            
+
             for idx, label in enumerate(cluster_labels):
                 if label == -1:
                     noise_count += 1
@@ -135,7 +135,7 @@ class SemanticClusteringService:
                 f"Identified {len(clusters)} clusters, "
                 f"{noise_count} noise points filtered"
             )
-            
+
             # Log cluster size distribution
             if clusters:
                 cluster_sizes = [len(indices) for indices in clusters.values()]
@@ -143,41 +143,41 @@ class SemanticClusteringService:
                     f"Cluster sizes: min={min(cluster_sizes)}, "
                     f"max={max(cluster_sizes)}, avg={np.mean(cluster_sizes):.1f}"
                 )
-            
+
             return clusters
-            
+
         except Exception as e:
             logger.error(f"Error clustering queries: {e}")
             raise
+
 
 class TrendScoringService:
     """
     Service for scoring and ranking trend clusters.
     Combines volume and recency metrics.
     """
-    
+
     def __init__(self, config: TrendingSearchConfig = None):
         """
         Initialize scoring service.
-        
+
         Args:
             config: Optional configuration override
         """
         self.config = config or TrendingSearchConfig()
 
-
     async def score_and_rank_clusters(
         self,
         clusters: Dict[int, List[int]],
-        queries_with_embeddings: List[Dict[str, Any]]
+        queries_with_embeddings: List[Dict[str, Any]],
     ) -> List[Dict[str, Any]]:
         """
         Score clusters based on volume and recency, then rank them.
-        
+
         Args:
             clusters: Dictionary mapping cluster_id to query indices
             queries_with_embeddings: Original queries with embeddings
-            
+
         Returns:
             Sorted list of trend dictionaries with scores
         """
@@ -195,7 +195,7 @@ class TrendScoringService:
 
                 # Calculate trend score
                 trend_score = await self._calculate_trend_score(cluster_queries)
-                
+
                 # Find representative query (centroid)
                 centroid_query = await self._find_centroid_query(
                     cluster_queries, query_indices
@@ -205,43 +205,42 @@ class TrendScoringService:
                 query_texts = [q["query"] for q in cluster_queries]
                 query_counts = Counter(query_texts)
 
-                trends.append({
-                    "cluster_id": cluster_id,
-                    "representative_query": centroid_query,
-                    "trend_score": trend_score,
-                    "query_count": len(cluster_queries),
-                    "unique_query_count": len(query_counts),
-                    "top_queries": str(query_counts.most_common(5)),
-                    "created_at": datetime.now(timezone.utc)
-                })
+                trends.append(
+                    {
+                        "cluster_id": cluster_id,
+                        "representative_query": centroid_query,
+                        "trend_score": trend_score,
+                        "query_count": len(cluster_queries),
+                        "unique_query_count": len(query_counts),
+                        "top_queries": str(query_counts.most_common(5)),
+                        "created_at": datetime.now(timezone.utc),
+                    }
+                )
 
             # Sort by trend score (descending)
             ranked_trends = sorted(
-                trends, 
-                key=lambda x: x["trend_score"], 
-                reverse=True
-            )[:self.config.TOP_N_TRENDS]
-            
+                trends, key=lambda x: x["trend_score"], reverse=True
+            )[: self.config.TOP_N_TRENDS]
+
             logger.info(f"Ranked top {len(ranked_trends)} trends")
-            
+
             return ranked_trends
-            
+
         except Exception as e:
             logger.error(f"Error scoring and ranking clusters: {e}")
             raise
 
     async def _calculate_trend_score(
-        self, 
-        cluster_queries: List[Dict[str, Any]]
+        self, cluster_queries: List[Dict[str, Any]]
     ) -> float:
         """
         Calculate trend score based on volume and recency.
-        
+
         Score = (volume * VOLUME_WEIGHT) + (recency_score * RECENCY_WEIGHT)
-        
+
         Args:
             cluster_queries: List of queries in the cluster
-            
+
         Returns:
             Trend score (higher = more trending)
         """
@@ -250,46 +249,44 @@ class TrendScoringService:
         # Recency boost: recent queries weighted more
         now = datetime.now(timezone.utc)
         recency_weights = []
-        
+
         for query in cluster_queries:
             time_diff = (now - query["created_at"]).total_seconds() / 60
             # Exponential decay
             recency_weight = np.exp(-time_diff / self.config.RECENCY_DECAY_MINUTES)
             recency_weights.append(recency_weight)
-        
+
         recency_score = sum(recency_weights)
-        
+
         # Combined score
         trend_score = (
-            volume_score * self.config.VOLUME_WEIGHT + 
-            recency_score * self.config.RECENCY_WEIGHT
+            volume_score * self.config.VOLUME_WEIGHT
+            + recency_score * self.config.RECENCY_WEIGHT
         )
-        
+
         return round(trend_score, 4)
-    
+
     async def _find_centroid_query(
-        self,
-        cluster_queries: List[Dict[str, Any]],
-        query_indices: List[int]
+        self, cluster_queries: List[Dict[str, Any]], query_indices: List[int]
     ) -> str:
         """
         Find the most representative query (closest to cluster centroid).
-        
+
         Args:
             cluster_queries: Queries in the cluster
             query_indices: Original indices of queries
-            
+
         Returns:
             Representative query string
         """
         # Compute cluster centroid
         embeddings = np.array([q["embedding"] for q in cluster_queries])
         centroid = np.mean(embeddings, axis=0)
-        
+
         # Find query closest to centroid
         distances = cosine_distances(embeddings, centroid.reshape(1, -1))
         closest_idx = np.argmin(distances)
-        
+
         return cluster_queries[closest_idx]["query"]
 
 
@@ -345,4 +342,3 @@ class RepresentativeQueryService:
             raise
 
         return RepresentativeQueryModel.model_validate(response)
-

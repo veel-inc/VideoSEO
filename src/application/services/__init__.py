@@ -13,20 +13,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-from src.application.services.audio_transcribe_embed_service import AudioTranscribeAndEmbedService
+from src.application.services.audio_transcribe_embed_service import (
+    AudioTranscribeAndEmbedService,
+)
 from src.application.services.postgres_database_service import PostgresDatabaseService
 from src.application.services.trending_search_service import (
     QueryNormalizationService,
     SemanticClusteringService,
-    TrendScoringService,
     TrendingSearchConfig,
+    TrendScoringService,
 )
 
 __all__ = [
-    "AudioTranscribeAndEmbedService", 
+    "AudioTranscribeAndEmbedService",
     "PostgresDatabaseService",
     "QueryNormalizationService",
     "SemanticClusteringService",
     "TrendScoringService",
-    "TrendingSearchConfig"
+    "TrendingSearchConfig",
 ]

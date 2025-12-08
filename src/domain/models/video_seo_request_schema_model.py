@@ -34,5 +34,7 @@ class VideoSEORequestSchemaModel(BaseModel):
 
 class VideoSEOQueryRequestModel(BaseModel):
     chat_id: UUID = Field(..., description="Unique chat id of the user")
-    temporary_id: Optional[str] = Field(None, description= "Temporary id to store query of unauthenticated user")
+    temporary_id: Optional[str] = Field(
+        None, description="Temporary id to store query of unauthenticated user"
+    )
     query: str = Field(..., description="searched text in the search bar")

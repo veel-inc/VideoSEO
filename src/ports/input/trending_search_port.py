@@ -14,7 +14,7 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any
+from typing import Any, Dict
 
 
 class TrendingSearchPort(ABC):
@@ -57,6 +57,7 @@ class TrendingSearchPort(ABC):
         - Concrete adapters should document the exact structure of each trend entry to
           ensure consumers can interpret fields consistently.
     """
+
     @abstractmethod
     async def get_current_search_trends(
         self, limit: int = 20, min_score: float = 0.0

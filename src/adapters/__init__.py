@@ -13,11 +13,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+from src.adapters.health_service_adapter import HealthServiceAdapter
 from src.adapters.openai_adapter import AsyncOpenAIApiAdapter
 from src.adapters.postgres_database_adapter import AsyncPostgresDatabaseAdapter
-from src.adapters.video_seo_query_pipeline_adapter import VideoSEOQueryAdapter
-from src.adapters.health_service_adapter import HealthServiceAdapter
 from src.adapters.trending_search_adapter import TrendingSearchAdapter
+from src.adapters.video_seo_query_pipeline_adapter import VideoSEOQueryAdapter
 
 __all__ = [
     "AsyncOpenAIApiAdapter",

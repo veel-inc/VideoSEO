@@ -36,6 +36,7 @@ def mock_env_vars(monkeypatch):
     monkeypatch.setenv("DATABASE_USER", "test_user")
     monkeypatch.setenv("DATABASE_PASSWORD", "test_password")
 
+
 @pytest.fixture
 def mock_connection():
     """Create a mock database connection and cursor."""

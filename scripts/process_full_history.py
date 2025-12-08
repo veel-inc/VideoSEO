@@ -13,16 +13,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import asyncio
-import logging
-import json
 import argparse
+import asyncio
+import json
+import logging
 from datetime import datetime, timezone
 
 from dotenv import load_dotenv
 
-from src.adapters.postgres_database_adapter import AsyncPostgresDatabaseAdapter
 from src.adapters.openai_adapter import AsyncOpenAIApiAdapter
+from src.adapters.postgres_database_adapter import AsyncPostgresDatabaseAdapter
 from src.application.services.trending_search_service import (
     QueryNormalizationService,
     SemanticClusteringService,
@@ -36,7 +36,12 @@ logging.basicConfig(level=logging.INFO)
 async def main():
     load_dotenv()
     parser = argparse.ArgumentParser()
-    parser.add_argument("--max-rows", type=int, default=None, help="When fetching full history, limit to this many most-recent rows")
+    parser.add_argument(
+        "--max-rows",
+        type=int,
+        default=None,
+        help="When fetching full history, limit to this many most-recent rows",
+    )
     args = parser.parse_args()
 
     config = TrendingSearchConfig()
@@ -56,14 +61,18 @@ async def main():
 
         # Normalize queries
         for r in rows:
-            r["query"] = await normalizer.normalize(r["original_query"]) 
+            r["query"] = await normalizer.normalize(r["original_query"])
 
         # Deduplicate for embeddings
         unique_queries = list({r["query"] for r in rows})
-        logger.info(f"Vectorizing {len(unique_queries)} unique queries (from {len(rows)} total)")
+        logger.info(
+            f"Vectorizing {len(unique_queries)} unique queries (from {len(rows)} total)"
+        )
 
         # Get embeddings (this will hit OpenAI)
-        embeddings = await openai_adapter.text_embedding(text=unique_queries, model=config.EMBEDDING_MODEL)
+        embeddings = await openai_adapter.text_embedding(
+            text=unique_queries, model=config.EMBEDDING_MODEL
+        )
 
         # Map back to rows
         query_to_embedding = {q: emb for q, emb in zip(unique_queries, embeddings)}
@@ -73,13 +82,15 @@ async def main():
             if emb is None:
                 # Shouldn't happen, but skip if embedding missing
                 continue
-            queries_with_embeddings.append({
-                "original_query": r["original_query"],
-                "query": r["query"],
-                "chat_id": r.get("chat_id"),
-                "created_at": r.get("created_at"),
-                "embedding": emb,
-            })
+            queries_with_embeddings.append(
+                {
+                    "original_query": r["original_query"],
+                    "query": r["query"],
+                    "chat_id": r.get("chat_id"),
+                    "created_at": r.get("created_at"),
+                    "embedding": emb,
+                }
+            )
 
         logger.info(f"Running clustering on {len(queries_with_embeddings)} items")
 
@@ -102,12 +113,19 @@ async def main():
         logger.info(f"Found {len(clusters)} clusters")
         for cid, indices in clusters.items():
             sample_queries = [queries_with_embeddings[i]["query"] for i in indices[:5]]
-            logger.info(f"Cluster {cid}: size={len(indices)}, examples={sample_queries}")
+            logger.info(
+                f"Cluster {cid}: size={len(indices)}, examples={sample_queries}"
+            )
 
         # Optional: save output for offline analysis
         out_path = f"trending_history_clusters.json"
         with open(out_path, "w", encoding="utf-8") as f:
-            json.dump({str(k): v for k, v in clusters.items()}, f, ensure_ascii=False, indent=2)
+            json.dump(
+                {str(k): v for k, v in clusters.items()},
+                f,
+                ensure_ascii=False,
+                indent=2,
+            )
         logger.info(f"Wrote cluster indices to {out_path}")
 
     finally:
@@ -115,4 +133,3 @@ async def main():
             await db.close()
         except Exception:
             pass
-

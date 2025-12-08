@@ -168,13 +168,11 @@ class Query:
             database_adapter = AsyncPostgresDatabaseAdapter()
 
             result = await database_adapter.search_popular_videos(
-                limit= popular_video_request.limit
+                limit=popular_video_request.limit
             )
-            validated = PopularVideosResponseModel.model_validate({
-                "status":"success",
-                "popular_videos": result,
-                "error": None
-            })
+            validated = PopularVideosResponseModel.model_validate(
+                {"status": "success", "popular_videos": result, "error": None}
+            )
             return PopularVideosResponseType.from_pydantic(validated)
         except Exception as e:
             error_response = PopularVideosResponseModel(

@@ -16,13 +16,13 @@
 import logging
 import os
 from pathlib import Path
-from typing import List, Optional, Dict, Any, Union, Type
-from pydantic import BaseModel
+from typing import Any, Dict, List, Optional, Type, Union
 
 from dotenv import load_dotenv
 from openai import AsyncClient
 from openai.types.audio import TranscriptionVerbose
 from openai.types.responses import Response
+from pydantic import BaseModel
 
 from src.ports.output import AsyncOpenAIAPIPort
 from src.utils import SingletonABCMeta

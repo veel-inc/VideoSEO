@@ -14,8 +14,8 @@
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from src.utils.helpers import (
-    file_exists_and_nonempty,
     extract_audio_from_video,
+    file_exists_and_nonempty,
     get_media_type,
 )
 from src.utils.singleton_metaclass import SingletonABCMeta, SingletonMetaClass

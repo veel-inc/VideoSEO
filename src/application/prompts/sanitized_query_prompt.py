@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+
 class SanitizedQueryPrompt:
     SANITIZED_QUERY_PROMPT_TEMPLATE = """
 You are given a list of short user search queries that are variations on a theme. 

@@ -13,15 +13,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import List, Optional
 from uuid import UUID
+
+from pydantic import BaseModel, Field
 
 
 class PopularVideosRequestModel(BaseModel):
-    limit: Optional[int] = Field(15, description="The maximum number of items to return.")
+    limit: Optional[int] = Field(
+        15, description="The maximum number of items to return."
+    )
+
 
 class PopularVideosResponseModel(BaseModel):
-    status:Optional[str] = Field("success", description="The status of the request.")
-    popular_videos: Optional[List[str]] = Field(default_factory=list, description="A list of video ids.")
-    error:Optional[str] = Field(None, description="The error message.")
+    status: Optional[str] = Field("success", description="The status of the request.")
+    popular_videos: Optional[List[str]] = Field(
+        default_factory=list, description="A list of video ids."
+    )
+    error: Optional[str] = Field(None, description="The error message.")
