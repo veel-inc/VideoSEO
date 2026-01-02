@@ -60,7 +60,7 @@ git push origin feature/your-feature-name
 ---
 
 ## Join Our Community
-Join our community on Discord to connect with other users and contributors! You can find the demo and discussions in the `#video-seo-discussions` channel. [Click here to join our Discord](https://discord.gg/6ccCcc6K).
+Join our community on Discord to connect with other users and contributors! You can find the demo and discussions in the `#video-seo-discussions` channel. [Click here to join our Discord](https://discord.gg/PWbHPNnRvj).
 
 ## Code of Conduct
 Please be respectful and considerate in all interactions. See [Contributor Covenant](https://www.contributor-covenant.org/) for guidelines.
